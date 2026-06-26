@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account settings, synchronized cart, and favorite list.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The unique Firebase Auth identifier of the user." },
+        "email": { "type": "string", "description": "User email address." },
+        "displayName": { "type": "string", "description": "User's full name." },
+        "photoURL": { "type": "string", "description": "User's avatar URL." },
+        "favorites": {
+          "type": "array",
+          "description": "Array of food item IDs that are in the user's wishlist."
+        },
+        "cart": {
+          "type": "array",
+          "description": "Serialized list of food items and quantities currently in the cart."
+        },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last updated timestamp." }
+      },
+      "required": ["userId", "email"]
+    },
+    "Review": {
+      "title": "User Review",
+      "description": "Public review submitted by a customer about their experience.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier of the review." },
+        "userId": { "type": "string", "description": "UID of the user who submitted the review." },
+        "name": { "type": "string", "description": "Name of the reviewer." },
+        "rating": { "type": "integer", "description": "Star rating from 1 to 5." },
+        "comment": { "type": "string", "description": "The custom textual comment." },
+        "avatar": { "type": "string", "description": "Profile picture of the user." },
+        "date": { "type": "string", "description": "Short date string." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the review was submitted." }
+      },
+      "required": ["id", "name", "rating", "comment", "createdAt"]
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "Information requested through the contact/support form.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique contact message ID." },
+        "name": { "type": "string", "description": "Sender name." },
+        "email": { "type": "string", "description": "Sender email address." },
+        "subject": { "type": "string", "description": "Subject of the message." },
+        "message": { "type": "string", "description": "Message context body." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Message creation timestamp." }
+      },
+      "required": ["id", "name", "email", "subject", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Durable private user profile, synchronized cart, and favorite list."
+    },
+    "reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Public reviews from food-loving customers."
+    },
+    "contact_messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "User inquiry / messages catalog."
+    }
+  }
+}

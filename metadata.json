@@ -1,0 +1,6 @@
+{
+  "name": "Food Munch Restaurant",
+  "description": "A modern and responsive restaurant website for Food Munch that features food category filtering, custom item search, a reviews visualizer, special offers, and a fully interactive shopping cart with live totals and toast alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

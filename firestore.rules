@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Hardened Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- User Profile (Cart / Wishlist Sync) ---
+    function isValidUser(data) {
+      return data.userId is string 
+        && data.userId == request.auth.uid
+        && data.email is string 
+        && data.email.size() <= 150
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 300))
+        && (!('favorites' in data) || (data.favorites is list && data.favorites.size() <= 100))
+        && (!('cart' in data) || (data.cart is list && data.cart.size() <= 50));
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming()) && (incoming().createdAt == request.time);
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (incoming().updatedAt == request.time)
+        && (incoming().createdAt == existing().createdAt)
+        && (incoming().userId == existing().userId)
+        && (incoming().email == existing().email);
+      allow delete: if false; // Users cannot self-destruct profiles from client SDK
+    }
+
+    // --- Public Customer Reviews ---
+    function isValidReview(data) {
+      return data.id is string
+        && data.id.size() <= 128
+        && data.name is string
+        && data.name.size() <= 100
+        && data.rating is int
+        && data.rating >= 1
+        && data.rating <= 5
+        && data.comment is string
+        && data.comment.size() <= 1000
+        && (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 300))
+        && (!('date' in data) || (data.date is string && data.date.size() <= 30))
+        && (!('userId' in data) || (data.userId is string && data.userId == request.auth.uid));
+    }
+
+    match /reviews/{reviewId} {
+      allow read, list: if true; // Publicly readable reviews
+      allow create: if isSignedIn() && isValidReview(incoming()) && (incoming().createdAt == request.time);
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidReview(incoming()) 
+        && (incoming().createdAt == existing().createdAt)
+        && (incoming().userId == existing().userId);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // --- Contact Form Message Submissions ---
+    function isValidContactMessage(data) {
+      return data.id is string
+        && data.id.size() <= 128
+        && data.name is string
+        && data.name.size() <= 100
+        && data.email is string
+        && data.email.size() <= 150
+        && data.subject is string
+        && data.subject.size() <= 200
+        && data.message is string
+        && data.message.size() <= 3000;
+    }
+
+    match /contact_messages/{messageId} {
+      allow create: if isValidContactMessage(incoming()) && (incoming().createdAt == request.time);
+      allow read, list, update, delete: if false; // Guests and users cannot read/modify sent messages
+    }
+  }
+}
